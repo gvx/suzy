@@ -1,0 +1,233 @@
+Suzy
+
+No-op:
+	  do nothing
+	| vertical pipe (do nothing)
+	- horizontal pipe (if not in math mode)
+	' lateral pipe
+Execution control:
+	@ end
+Flow control:
+	{ right
+	} left
+	^ up
+	_ down
+	[ forewards
+	] backwards
+	% random direction
+	# jump
+	$ conditional jump
+Conditional jump preparation:
+	= equality
+	< smaller than
+	> greater than
+Input/output:
+	? input
+	! output
+Variable handling:
+	: set a variable to a value
+	( enter math mode
+	) leave math mode
+	" enter/leave unicode mode
+	. cat strings
+	, substring
+	~ swap two variables
+String mode:
+	` temporary escape unicode mode, for changing directions
+	\ escape sequence
+Math mode:
+	+ addition
+	- subtraction
+	* multiplication
+	/ division
+Numeric:
+	0-9 numeric constants
+Variable names:
+	A-Z string variable names
+	a-z integer variable names
+	\ indirect variable mode (if not in ascii/unicode mode)
+Arguments:
+	; separates 2 arguments
+Unused:
+	& unused in Suzy proper (except in strings, of course), but can be used in a Suzy source file to separate sheets
+
+Usage:
+	% Change the direction in a random way, but not in reverse.
+	  A random 2-way switch can be implemented by merging four paths into two, and directing the last one back to %
+
+	# The jump statement skips exactly one character, before continuing execution in the same direction.
+
+	$ Every conditional jump must be prepared. If the condition turns out true, $ is a no-op, else it does the same as #.
+	  To make if-blocks longer than one char change the direction after the jump.
+	  Example:
+		} ... $_@
+	  If execution flows from left, a false evaluation ends the program.
+	  $# results into a "if not".
+
+	= This requires arguments:
+		=ab$@
+	  Above example ends execution if the variables "a" and "b" contain the same.
+	  Evaluating variables with constants is also possible:
+		=a42$#!a
+	  Above prints what a contains if it isn't 42.
+	  = can be used on strings as well:
+		=A"Hello world!"$#@
+	  Above ends execution if A does not contain "Hello world!".
+	  Everything what applies to =, applies to < and > as well.
+
+	? Waits for the user to enter a value (may also read from files or standard input).
+	  Stores result in the variable argument:
+		?A=A'0'$@
+	  This example ends execution if user entered zero.
+	  If an integer variable is supplied, the result is converted to integer:
+		?a?b>ab$#@
+	  Above example asks for two integers and ends execution if the second is larger or equal than the first.
+	  If the entered value can't be converted to integer, the variable is set to zero.
+
+	! Displays variable argument on screen.
+		!Z
+	  Above displays the string in variable Z. Integers may also be supplied, as well as constants:
+		!"Hello world!"
+	  See usage for " to print newlines and other control characters.
+
+	: Set a variable. Takes two arguments: a variable name and an expression.
+	  Examples:
+		:A"Hello world!" :BA  :a42 :b(a+3)
+	  After this, A contains "Hello world!", B contains "Hello world!" as well, a is 42 and b 45.
+	  For more information about the last statement, see usage for (.
+	  If the expression has the wrong type, it will be converted:
+		:A123
+	  Now A contains "123".
+
+	( Starts math mode.
+	  Between ( and ), only integer variables, integer constants, +, -, * and / may be used.
+	  (Except for space and the vertical and lateral bar.)
+	  * and / have higer precedence than + and -, for the rest everything is evaluated left to right.
+	  Example:
+		:b(a+2*42/4-8)
+	  This causes b to be a+(2*42/4)-8 = a+21-8 = a+13. If a is 2, b will be 15.
+	  If directly for the ( or after the ) a +, -, * or / is placed, the result will be changed.
+	  For example:
+		(-x) becomes: (0-x)
+		(+x) becomes: abs(x)*
+		(x-) becomes: (x-1)
+		(x+) becomes: (x+1)
+		(x*) becomes: (x*x)
+		(x/) becomes: (x)
+		(*x) becomes: (x)
+		(/x) becomes: sqrt(x)*
+	  *abs and sqrt are not otherwise accessible via Suzy.
+	  They all bind stronger than *, except for (/x), which binds looser than +:
+		(a+b*) becomes: (a + b*b)
+		(+a+b) becomes: (abs(a) + b)
+		(/a+b) becomes: (sqrt(a+b))
+		(a*b*) becomes: (a*b*b)
+		(+a*b) becomes: (abs(a) * b)
+		(/a*b) becomes: (sqrt(a*b))
+	  Inside math mode, implicit multiplication is allowed:
+		(abc) becomes: (a*b*c)
+
+	" Starts unicode constant:
+		:A"Hello!"
+	  If used inside an unicode constant, \ starts an escape sequence:
+		!"Hello world!\nEnd."
+	  This prints Hello world! and End. on two lines.
+	  The escape sequences and their meanings are descriped in the section Escape sequences.
+
+	. Concatenate a string to another. Same syntax as :, only it does not accept integer variables, integer constants or expressions.
+		:A"Hello ".A"world!"!A
+	  Prints Hello world! If an integer is concatenated, the ascii/unicode character is appended:
+		:A"Hello".A33!A
+	  Prints "Hello!". If the string is unicode, the unicode character is appended.
+
+	, Puts a substring into a variable. Arguments: result string variable, source string (constant or variable), start index, length.
+	  Examples:
+		,BA3;2
+		:a3,C"Foobar"0a
+		,DA;6;10
+	  If A contains "Hello world!", B, C and D contain "lo", "Foo" and "world!" respectively.
+	  If either index or length is out of range, that part is ignored.
+
+	~ Swaps two variables. If they are of different types, they are converted.
+	  Example:
+		:A"Hello":B"World"~AB
+		:A"3":a8~Aa
+		:A"Hello":a392~Aa
+	  In the first example, A now contains "World" and B "Hello". In the second, A contains "8" and a 3.
+	  In the third, A contains "392" and a contains 0.
+
+	` Escape unicode mode.
+	  When space is scarce, you sometimes want to make a turn inside unicode mode:
+		:A"Hello `_
+		          `
+		   "!dlrow{
+	  Sets A to "Hello world!". Note that the escape is only for one character, so:
+		:A"Hello`_
+		         }..."
+		         !
+		         "
+	  Sets A to "Hello}!", and not "Hello...".
+		:A"Hello` _
+		          !
+		          "
+	  Is invalid, because a space followed the `, just like in:
+		:A"Hello`World"
+	  Which is invalid, because a non-directional character followed the `. To use the character ` inside a string, use \a60.
+	  Only static flow control is allowed, so you can't use % or $. You can use concatenation for that.
+
+	\ Escape sequences: placed inside string constant:
+		"Hello\nworld"
+		"C:\\"
+		"He said: \a22Hello, world!\a22"
+	  See section Escape sequenses.
+	  Indirect variable mode:
+		:b3:A"b":a\A
+	  Now a contains 3.
+		:a4:A"b":\Aa
+	  Now b contains 4.
+		:a2:A"a":b(\A*3)
+	  Now b contains 6.
+		:B"A":\B"zzz"
+	  Now A contains "zzz".
+		:\"abc"3
+	  The non-standard variable "abc" now contains 3.
+	  The case of the first character determines whether it is a string or integer:
+		:\"Abc""F"
+	  Now "Abc" contains "F". If the first character is not a letter, the variable is a string.
+	  If integers are passed, an infinite stack of integers can be accessed:
+		:a0}  :\a(3)  :a(a+1) =a10 $@_
+		   ^-------------------------{
+	  This sets integers 0 to 9 inclusive to 3.
+
+	/ Division. Division by zero results in zero:
+		:a(6/0)!a
+	  Prints 0. Non-integer results is truncated towards zero:
+		!(5/2)!' ':a(-5)!(a/2)
+	  Prints 2 -2.
+
+	0-9 Numeric constants. Spaces do NOT separate numeric constants:
+		:a 10 000
+	    Sets a to 10000.
+	    To separate numeric constants, use the argument separator or math mode:
+		:a 10 ; 000
+		:a (10) 000
+		:a 10 (000)
+	    All three set a to 10, and ignore the 0.
+
+Escape sequenses:
+	\\     backslash
+	\n     newline
+	\t     tab
+	\b     backspace
+	\a##   ascii character ## (hexadecimal)
+	\u#### unicode character #### (hexadecimal)
+	\a22   ascii character "
+	\a60   ascii character `
+
+Example program:
+	The following program asks for input, asks again if non-integer, stops at 0, else displays the number times 6:
+		}!"Please enter a number: " ?A  =A"0"$@ :BA _
+		| } !"\nEnter an integer!"--_               ~
+		| |                         |               B
+		| ^------------------------- ------{        b
+		^--------------------"n\"!--{(6*b)!^$  0b=  {

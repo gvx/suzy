@@ -1,0 +1,240 @@
+#!/usr/bin/env python
+#suzy interpreter
+
+import sys, optparse, os.path
+from subprocess import Popen
+from sdef import instruction_table
+
+usage = "usage: %prog [options] file"
+parser = optparse.OptionParser(usage)
+parser.add_option("-n", "--noscfile", action="store_true", default=False, help='do not create a .sc compiled Suzy file')
+parser.add_option("-d", "--debug", action="store_true", default=False, help='print every action--debugging only')
+options, args = parser.parse_args()
+
+if not args:
+	print "Please supply a Suzy script."
+	exit()
+
+suzyfile = open(args[0])
+if not suzyfile.readline().startswith('SUZY'):
+	suzyfile.close()
+	p = os.path.dirname(sys.argv[0])
+	if p=='.': p=''
+	command = ["python", p+"sc.py", "-mAuto-generated for Suzy interpreter 0.0", args[0]]
+	if options.noscfile:
+		script = Popen(command, stdout=PIPE).communicate()[0]
+	else:
+		Popen(command+[os.path.splitext(args[0])[0]+'.sc']).communicate()[0]
+		suzyfile = open(os.path.splitext(args[0])[0]+'.sc')
+		suzyfile.readline()
+		script = suzyfile.read()
+		suzyfile.close()
+else:
+	script = suzyfile.read()
+	suzyfile.close()
+
+#Interpreting Functions
+def newvar(name):
+	if name[0].isupper():
+		return ''
+	else:
+		return 0
+
+def resolve(K):
+	Type, Content = K
+	if Type == 'c':
+		return Content
+	elif Type == 'v':
+		return mem.get(Content, newvar(Content))
+	elif Type == 'iv':
+		Content = mem.get(Content, newvar(Content))
+		return mem.get(Content, newvar(Content))
+
+def resolvevar(K):
+	Type, Content = K
+	if Type == 'v':
+		return Content
+	elif Type == 'iv':
+		return mem.get(Content, newvar(Content))
+
+def put(name, value):
+	if name[0].isupper():
+		mem[name] = str(value)
+	else:
+		try:
+			mem[name] = int(value)
+		except:
+			mem[name] = 0
+
+single_escapes = {'\\': '\\', 'n': '\n', 't': '\t', 'b': '\b'}
+def unesc(escaped_text):
+	unescaped_text = []
+	STATE = 0
+	mdat = []
+	for c in escaped_text:
+		if STATE == 0:
+			if c == '\\':
+				STATE = 1
+			else:
+				unescaped_text.append(c)
+		elif STATE == 1:
+			if c in single_escapes:
+				unescaped_text.append(single_escapes[c])
+				STATE = 0
+			elif c == 'a':
+				STATE = 2
+			elif c == 'u':
+				STATE = 4
+		else:
+			mdat.append(c)
+			if len(mdat)==STATE:
+				unescaped_text.append(STATE==4 and unichr or chr)(int(''.join(mdat),16))
+				del mdat[:]
+	return ''.join(unescaped_text)
+
+def matheval(expr):
+	tempres = 0
+	do_sqrt = False
+	fields = []
+	tmpx = ''
+	indirect = False
+	for char in expr:
+		if char in '*/+-':
+			if tmpx:
+				fields.append(tmpx)
+				tmpx = ''
+			indirect = False
+			fields.append(char)
+		elif char.isalpha() and not indirect:
+			if tmpx:
+				fields.append(tmpx)
+				tmpx = ''
+			indirect = False
+			fields.append(char)
+		elif char == '\\':
+			indirect = True
+			tmpx += char
+		else:
+			tmpx += char
+	if tmpx:
+		fields.append(tmpx)
+	print(fields)
+	if fields[0] == '-':
+		fields.pop(0)
+		fields[0] = -int(resolve(fields[0]))
+	elif fields[0] == '+':
+		fields.pop(0)
+		fields[0] = abs(int(resolve(fields[0])))
+	elif fields[0] == '*':
+		fields.pop(0)
+	elif fields[0] == '/':
+		fields.pop(0)
+		do_sqrt = True
+	if fields[-1] == '-':
+		fields.pop()
+		fields[0] = -int(resolve(fields[0]))
+	elif fields[0] == '+':
+		fields.pop()
+		fields[0] = abs(int(resolve(fields[0])))
+	elif fields[-1] == '*':
+		fields.pop()
+		fields[-1] = int(resolve(fields[0]))**2
+	elif fields[0] == '/':
+		fields.pop()
+	if do_sqrt: tempres = int(tempres**.5)
+	return ('c', tempres)
+
+#Main Interpreter Loop
+i = 0
+lines = script.split('\n')
+ins_args_left = 0
+ins_args = []
+comp = None
+action = None
+mem = {}
+while i < len(lines):
+	ins = instruction_table[lines[i]]
+	if options.debug:
+		print 'INSTRUCTION:',ins
+		print 'MEMORY:',mem
+	if ins == 'STR_CONST':
+		i += 1
+		ins_args.append(('c', unesc(lines[i])))
+		if options.debug:
+			print 'META-INSTRUCTION:',lines[i]
+		ins_args_left -= 1
+	elif ins == 'NUM_CONST':
+		i += 1
+		ins_args.append(('c', int(lines[i])))
+		if options.debug:
+			print 'META-INSTRUCTION:',lines[i]
+		ins_args_left -= 1
+	elif ins == 'MATH_EXPR':
+		#evaluate math
+		i += 1
+		returnvalue = matheval(lines[i])
+		if options.debug:
+			print 'META-INSTRUCTION:',lines[i]
+		ins_args.append(returnvalue)
+		ins_args_left -= 1
+	elif ins == 'VAR':
+		i += 1
+		ins_args.append(('v', lines[i]))
+		if options.debug:
+			print 'META-INSTRUCTION:',lines[i]
+		ins_args_left -= 1
+	elif ins == 'IND_VAR':
+		i += 1
+		ins_args.append(('iv', lines[i]))
+		if options.debug:
+			print 'META-INSTRUCTION:',lines[i]
+		ins_args_left -= 1
+	elif ins in ('COMP_EQ', 'COMP_GT', 'COMP_LT', 'SET', 'SWAP', 'CAT'):
+		action = ins
+		ins_args_left = 2
+	elif ins == 'COND_JUMP':
+		i = int(lines[i + (comp and 1 or 2)])-1
+	elif ins == 'RAND_DIR':
+		i = int(lines[i + random.randint(1,4)])-1
+	elif ins == 'GOTO':
+		i = int(lines[i + 1])-1
+	elif ins in ('INPUT', 'PRINT'):
+		action = ins
+		ins_args_left = 1
+	elif ins == 'SUBSTR':
+		action = ins
+		ins_args_left = 4
+	elif ins == 'END_PROGRAM':
+		break
+	if action and not ins_args_left:
+		if action=='COMP_EQ':
+			comp = resolve(ins_args[0]) == resolve(ins_args[1])
+		elif action=='COMP_GT':
+			comp = resolve(ins_args[0]) > resolve(ins_args[1])
+		elif action=='COMP_LT':
+			comp = resolve(ins_args[0]) < resolve(ins_args[1])
+		elif action=='INPUT':
+			mem[resolvevar(ins_args[0])] = sys.stdin.readline().rstrip()
+		elif action=='PRINT':
+			sys.stdout.write(str(resolve(ins_args[0])))
+		elif action=='SET':
+			put(resolvevar(ins_args[0]), resolve(ins_args[1]))
+		elif action=='SWAP':
+			tmp = resolve(ins_args[0])
+			put(resolvevar(ins_args[0]), resolve(ins_args[1]))
+			put(resolvevar(ins_args[1]), tmp)
+		elif action=='CAT':
+			if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
+				raise TypeError("Can't concatenate to anything other than a string variable")
+			if isinstance(resolve(ins_args[1]), int):
+				r = unichr(r)
+			else:
+				r = resolve(ins_args[1])
+			mem[resolvevar(ins_args[0])] += r
+		elif action=='SUBSTR':
+			if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
+				raise TypeError("Can't put a substring in anything other than a string variable")
+			put(resolvevar(ins_args[0]), resolve(ins_args[1])[resolve(ins_args[2]):resolve(ins_args[3])])
+		action = None
+		del ins_args[:]
+	i += 1
