@@ -1,0 +1,1 @@
+The compiler has the task of converting a 3D source file into linear byte-code, that has (conditonal) gotos as the only flow control.

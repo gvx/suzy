@@ -1,0 +1,31 @@
+Suzy is a three-dimensional esoteric programming language[1]. It is 
+inspired by Befunge[2]. Suzy utilises every non-control ASCII character, 
+except for tabs.
+
+This repository consists of a Suzy compiler (sc.py) and interpreter 
+(suzy.py), both written in Python[3], and contains an extensive 
+documentation of all characters in docs/, and some examples in 
+examples/.
+
+How to use the interpreter:
+
+    $ python suzy.py myprog.suz
+
+Use
+
+    $ python suzy.py -h
+
+to see the command line options supported.
+Invoke the interpreter with:
+
+    $ python sc.py infile.suz outfile.sc
+
+If the output file is omitted, it defaults to stdout, and if the input 
+file is omitted as well, that defaults to stdin.
+
+Please note the compiler compiles to byte-code, and the interpreter will 
+run the compiler first if the given file is not Suzy byte-code.
+
+[1] http://esoteric.voxelperfect.net/wiki/Esoteric_programming_language
+[2] http://esoteric.voxelperfect.net/wiki/Befunge
+[3] they are written for Python 2.5
