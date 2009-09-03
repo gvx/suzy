@@ -101,46 +101,74 @@ def matheval(expr):
 	for char in expr:
 		if char in '*/+-':
 			if tmpx:
-				fields.append(tmpx)
+				fields.append((indirect and 'iv' or 'c',tmpx))
 				tmpx = ''
 			indirect = False
-			fields.append(char)
+			fields.append(('o',char))
 		elif char.isalpha() and not indirect:
 			if tmpx:
-				fields.append(tmpx)
+				fields.append((indirect and 'iv' or 'c',tmpx))
 				tmpx = ''
+			elif fields and fields[-1][0] == 'v':
+				#implicit multiplication
+				fields.append(('o','*'))
 			indirect = False
-			fields.append(char)
+			fields.append(('v', char))
 		elif char == '\\':
 			indirect = True
 			tmpx += char
 		else:
 			tmpx += char
 	if tmpx:
-		fields.append(tmpx)
-	print(fields)
-	if fields[0] == '-':
+		fields.append((indirect and 'iv' or 'c',tmpx))
+	if fields[0][1] == '-':
 		fields.pop(0)
-		fields[0] = -int(resolve(fields[0]))
-	elif fields[0] == '+':
+		fields[0] = ('c',-int(resolve(fields[0])))
+	elif fields[0][1] == '+':
 		fields.pop(0)
-		fields[0] = abs(int(resolve(fields[0])))
-	elif fields[0] == '*':
+		fields[0] = ('c',abs(int(resolve(fields[0]))))
+	elif fields[0][1] == '*':
 		fields.pop(0)
-	elif fields[0] == '/':
+	elif fields[0][1] == '/':
 		fields.pop(0)
 		do_sqrt = True
-	if fields[-1] == '-':
+	if fields[-1][1] == '-':
 		fields.pop()
-		fields[0] = -int(resolve(fields[0]))
-	elif fields[0] == '+':
+		fields[-1] = ('c',int(resolve(fields[0]))-1)
+	elif fields[-1][1] == '+':
 		fields.pop()
-		fields[0] = abs(int(resolve(fields[0])))
-	elif fields[-1] == '*':
+		fields[-1] = ('c',int(resolve(fields[0]))+1)
+	elif fields[-1][1] == '*':
 		fields.pop()
-		fields[-1] = int(resolve(fields[0]))**2
-	elif fields[0] == '/':
+		fields[-1] = ('c',int(resolve(fields[0]))**2)
+	elif fields[0][1] == '/':
 		fields.pop()
+	#evaluate fields *here*
+	i = 1
+	while i < len(fields):
+		#if fields[i][0] == 'o':
+		if fields[i][1] in '*/':
+			two = fields.pop(i+1)
+			op = fields.pop(i)
+			one = fields.pop(i-1)
+			if op[1] == '*':
+				fields.insert(i, ('c', int(resolve(one))*int(resolve(two))))
+			else:
+				fields.insert(i, ('c', int(resolve(one))//int(resolve(two))))
+		i += 2
+	i = 1
+	while i < len(fields):
+		#if fields[i][0] == 'o':
+		if fields[i][1] in '+-':
+			two = fields.pop(i+1)
+			op = fields.pop(i)
+			one = fields.pop(i-1)
+			if op[1] == '+':
+				fields.insert(i, ('c', int(resolve(one))+int(resolve(two))))
+			else:
+				fields.insert(i, ('c', int(resolve(one))-int(resolve(two))))
+		i += 2
+	tempres = resolve(fields[0])#should be one
 	if do_sqrt: tempres = int(tempres**.5)
 	return ('c', tempres)
 
