@@ -236,6 +236,7 @@ while i < len(lines):
 		action = ins
 		ins_args_left = 4
 	elif ins == 'END_PROGRAM':
+		print '' #flush line
 		break
 	if action and not ins_args_left:
 		ins_args_i = len(ins_args) - 1
