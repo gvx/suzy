@@ -34,11 +34,14 @@ else:
 	suzyfile.close()
 
 #Interpreting Functions
-def newvar(name):
-	if name[0].isupper():
-		return ''
+def vartype(name):
+	if isinstance(name, int) or name[0].islower():
+		return int
 	else:
-		return 0
+		return str
+
+def newvar(name):
+	return vartype(name)()
 
 def resolve(K):
 	Type, Content = K
@@ -47,7 +50,7 @@ def resolve(K):
 	elif Type == 'v':
 		return mem.get(Content, newvar(Content))
 	elif Type == 'iv':
-		Content = mem.get(Content, newvar(Content))
+		Content = mem.get(Content[1:], newvar(Content[1:]))
 		return mem.get(Content, newvar(Content))
 
 def resolvevar(K):
@@ -58,7 +61,7 @@ def resolvevar(K):
 		return mem.get(Content, newvar(Content))
 
 def put(name, value):
-	if name[0].isupper():
+	if vartype(name)==str:
 		mem[name] = str(value)
 	else:
 		try:
@@ -98,6 +101,8 @@ def matheval(expr):
 	fields = []
 	tmpx = ''
 	indirect = False
+	if options.debug:
+		print(expr)
 	for char in expr:
 		if char in '*/+-':
 			if tmpx:
@@ -152,21 +157,22 @@ def matheval(expr):
 			op = fields.pop(i)
 			one = fields.pop(i-1)
 			if op[1] == '*':
-				fields.insert(i, ('c', int(resolve(one))*int(resolve(two))))
+				fields.insert(i-1, ('c', int(resolve(one))*int(resolve(two))))
 			else:
-				fields.insert(i, ('c', int(resolve(one))//int(resolve(two))))
-		i += 2
+				fields.insert(i-1, ('c', int(resolve(one))//int(resolve(two))))
+		else:
+			i += 2
 	i = 1
 	while i < len(fields):
-		#if fields[i][0] == 'o':
-		if fields[i][1] in '+-':
-			two = fields.pop(i+1)
-			op = fields.pop(i)
-			one = fields.pop(i-1)
-			if op[1] == '+':
-				fields.insert(i, ('c', int(resolve(one))+int(resolve(two))))
-			else:
-				fields.insert(i, ('c', int(resolve(one))-int(resolve(two))))
+		if fields[i][0] == 'o':
+			if fields[i][1] in '+-':
+				two = fields.pop(i+1)
+				op = fields.pop(i)
+				one = fields.pop(i-1)
+				if op[1] == '+':
+					fields.insert(i-1, ('c', int(resolve(one))+int(resolve(two))))
+				else:
+					fields.insert(i-1, ('c', int(resolve(one))-int(resolve(two))))
 		i += 2
 	tempres = resolve(fields[0])#should be one
 	if do_sqrt: tempres = int(tempres**.5)
@@ -212,11 +218,7 @@ while i < len(lines):
 			print 'META-INSTRUCTION:',lines[i]
 		ins_args_left -= 1
 	elif ins == 'IND_VAR':
-		i += 1
-		ins_args.append(('iv', lines[i]))
-		if options.debug:
-			print 'META-INSTRUCTION:',lines[i]
-		ins_args_left -= 1
+		ins_args.append('iv')
 	elif ins in ('COMP_EQ', 'COMP_GT', 'COMP_LT', 'SET', 'SWAP', 'CAT'):
 		action = ins
 		ins_args_left = 2
@@ -235,6 +237,11 @@ while i < len(lines):
 	elif ins == 'END_PROGRAM':
 		break
 	if action and not ins_args_left:
+		ins_args_i = len(ins_args) - 1
+		while ins_args_i >= 0:
+			if ins_args[ins_args_i] == 'iv':
+				ins_args[ins_args_i] = ('v', resolve(ins_args.pop(ins_args_i+1)))
+			ins_args_i -= 1
 		if action=='COMP_EQ':
 			comp = resolve(ins_args[0]) == resolve(ins_args[1])
 		elif action=='COMP_GT':
