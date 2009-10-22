@@ -1,0 +1,18 @@
+31,7,3
+}!"Primes up to: "?A ~Aa     ]
+ a is the maxprime
+ p is the index of the stack
+ stack is the list of primes
+ n is the number that is
+      checked for primeness
+ i is a temp stack index
+&
+ ] 3n:1p: _$0001a>"n\2"!2;0\:{
+          }!"Too large!\n"@
+&
+ } >na$@ :i0 } =(n/\i*\i)n _
+ |           ^":"!        {$
+ |                }:i(i+1)^#
+ |  _   p:p\!np\: ^$)n/(i\<{
+ |  }(p+1)!"\n"_           |
+ ^--)1+n(n: ---{-----------{
