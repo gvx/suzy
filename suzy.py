@@ -173,7 +173,8 @@ def matheval(expr):
 					fields.insert(i-1, ('c', int(resolve(one))+int(resolve(two))))
 				else:
 					fields.insert(i-1, ('c', int(resolve(one))-int(resolve(two))))
-		i += 2
+			else:
+				i += 2
 	tempres = resolve(fields[0])#should be one
 	if do_sqrt: tempres = int(tempres**.5)
 	return ('c', tempres)
