@@ -16,7 +16,10 @@ if not args:
 	exit()
 
 suzyfile = open(args[0])
-if not suzyfile.readline().startswith('SUZY'):
+firstline = suzyfile.readline()
+if firstline.startswith('#!'):
+	firstline = suzyfile.readline()
+if not firstline.startswith('SUZY'):
 	suzyfile.close()
 	p = os.path.dirname(sys.argv[0])
 	if p=='.': p=''
