@@ -174,11 +174,11 @@ def process_branch(pos):
 				state='args'
 				args_left = 2
 			elif c == '<':
-				state, args_left = flushadd('COMP_GT', state, args_left)
+				state, args_left = flushadd('COMP_LT', state, args_left)
 				state='args'
 				args_left = 2
 			elif c == '>':
-				state, args_left = flushadd('COMP_LT', state, args_left)
+				state, args_left = flushadd('COMP_GT', state, args_left)
 				state='args'
 				args_left = 2
 			elif c == '!':
