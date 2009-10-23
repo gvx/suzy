@@ -1,0 +1,6 @@
+18,5,1
+_ Calculates 1000th Fibonnaci number
+} :a0 :b1 :n1    _
+} :a(a+b) ~ab    _
+^ )+n(n:_$ 0001n={
+        }!a@
