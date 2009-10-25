@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #suzy interpreter
 
-import sys, optparse, os.path
+import sys, optparse, os.path, math
 from subprocess import Popen
 from sdef import instruction_table
 
@@ -162,7 +162,15 @@ def matheval(expr):
 			if op[1] == '*':
 				fields.insert(i-1, ('c', int(resolve(one))*int(resolve(two))))
 			else:
-				fields.insert(i-1, ('c', int(resolve(one))//int(resolve(two))))
+				try:
+					a = float(resolve(one))/int(resolve(two))
+					if a > 0:
+						a = int(a)
+					else:
+						a = int(math.ceil(a))
+				except ZeroDivisionError:
+					a = 0
+				fields.insert(i-1, ('c', a))
 		else:
 			i += 2
 	i = 1
