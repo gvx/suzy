@@ -24,6 +24,8 @@ Conditional jump preparation:
 Input/output:
 	? input
 	! output
+File access:
+	/ open a file for input and output
 Variable handling:
 	: set a variable to a value
 	( enter math mode
@@ -199,11 +201,17 @@ Usage:
 		   ^-------------------------{
 	  This sets integers 0 to 9 inclusive to 3.
 
-	/ Division. Division by zero results in zero:
+	/ Division (when in math mode). Division by zero results in zero:
 		:a(6/0)!a
 	  Prints 0. Non-integer results is truncated towards zero:
 		!(5/2)!' ':a(-5)!(a/2)
 	  Prints 2 -2.
+	  Open a file (when not in math mode). Writing:
+		/"log.txt" !"logged something"
+	  Reading:
+		/"data.txt" ?A
+	  Closing the opened file, and resume using stdin/stdout:
+		/""
 
 	0-9 Numeric constants. Spaces do NOT separate numeric constants:
 		:a 10 000
