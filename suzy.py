@@ -72,6 +72,25 @@ def put(name, value):
 		except:
 			mem[name] = 0
 
+class Filexs:
+	def __init__(self):
+		self.file = None
+		self.curfile = ''
+	def read(self):
+		if self.file:
+			return self.file.read()
+		else:
+			return sys.stdin.readline().rstrip()
+	def write(self, t):
+		if self.file:
+			self.file.write(t)
+		else:
+			sys.stdout.write(t)
+	def close(self):
+		if self.file:
+			self.file.close()
+filexs = Filexs()
+
 single_escapes = {'\\': '\\', 'n': '\n', 't': '\t', 'b': '\b'}
 def unesc(escaped_text):
 	unescaped_text = []
@@ -240,7 +259,7 @@ while i < len(lines):
 		i = int(lines[i + random.randint(1,4)])-1
 	elif ins == 'GOTO':
 		i = int(lines[i + 1])-1
-	elif ins in ('INPUT', 'PRINT'):
+	elif ins in ('INPUT', 'PRINT', 'OPEN_FILE'):
 		action = ins
 		ins_args_left = 1
 	elif ins == 'SUBSTR':
@@ -262,9 +281,22 @@ while i < len(lines):
 		elif action=='COMP_LT':
 			comp = resolve(ins_args[0]) < resolve(ins_args[1])
 		elif action=='INPUT':
-			mem[resolvevar(ins_args[0])] = sys.stdin.readline().rstrip()
+			mem[resolvevar(ins_args[0])] = filexs.read()
 		elif action=='PRINT':
-			sys.stdout.write(str(resolve(ins_args[0])))
+			filexs.write(str(resolve(ins_args[0])))
+		elif action=='OPEN_FILE':
+			filexs.close()
+			filexs.curfile = str(resolve(ins_args[0]))
+			if filexs.curfile and filexs.curfile != '0':
+				try:
+					filexs.file = open(filexs.curfile, 'r+')
+				except:
+					print "suzy: could not open file"
+					if options.debug:
+						print "Tried to open file", filexs.curfile, "but it failed"
+					break
+			else:
+				filexs.file = None
 		elif action=='SET':
 			put(resolvevar(ins_args[0]), resolve(ins_args[1]))
 		elif action=='SWAP':
@@ -286,3 +318,5 @@ while i < len(lines):
 		action = None
 		del ins_args[:]
 	i += 1
+
+filexs.close()

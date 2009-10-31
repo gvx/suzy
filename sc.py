@@ -169,6 +169,10 @@ def process_branch(pos):
 				return
 			elif c == ';':
 				state, args_left = flushadd(None, state, args_left)
+			elif c == '/':
+				state, args_left = flushadd('OPEN_FILE', state, args_left)
+				state='args'
+				args_left = 1
 			elif c == '=':
 				state, args_left = flushadd('COMP_EQ', state, args_left)
 				state='args'
