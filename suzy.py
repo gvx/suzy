@@ -126,7 +126,7 @@ def matheval(expr):
 	if options.debug:
 		print(expr)
 	for char in expr:
-		if char in '*/+-':
+		if char in '*/%+-':
 			if tmpx:
 				fields.append((indirect and 'iv' or 'c',tmpx))
 				tmpx = ''
@@ -174,12 +174,18 @@ def matheval(expr):
 	i = 1
 	while i < len(fields):
 		#if fields[i][0] == 'o':
-		if fields[i][1] in '*/':
+		if fields[i][1] in '*/%':
 			two = fields.pop(i+1)
 			op = fields.pop(i)
 			one = fields.pop(i-1)
 			if op[1] == '*':
 				fields.insert(i-1, ('c', int(resolve(one))*int(resolve(two))))
+			elif op[1] == '%':
+				try:
+					a = int(resolve(one))%int(resolve(two))
+				except ZeroDivisionError:
+					a = 0
+				fields.insert(i-1, ('c', a))
 			else:
 				try:
 					a = float(resolve(one))/int(resolve(two))
