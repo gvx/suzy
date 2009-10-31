@@ -22,7 +22,7 @@ if firstline.startswith('#!'):
 if not firstline.startswith('SUZY'):
 	suzyfile.close()
 	p = os.path.dirname(sys.argv[0])
-	if p=='.': p=''
+	if not p.endswith('/'): p+='/'
 	command = ["python", p+"sc.py", "-mAuto-generated for Suzy interpreter 0.0", args[0]]
 	if options.noscfile:
 		script = Popen(command, stdout=PIPE).communicate()[0]
