@@ -1,0 +1,3 @@
+ * Implement library loading
+ * Use nested math modes, to be able to do (a*(b+c))
+ * Make ~ in math mode specify a random range, in priority between (+x) and *
