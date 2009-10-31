@@ -18,6 +18,7 @@ byte_code_table = {	'STR_CONST': '\x43\x30',
 					'END_PROGRAM': '\x40\x20',
 
 					'OPEN_FILE': '\x4f\x46',
+					'USE_LIB': '\x2b\x20',
 				}
 
 instruction_table = dict((v,k) for k,v in byte_code_table.items())
