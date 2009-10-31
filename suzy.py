@@ -289,7 +289,10 @@ while i < len(lines):
 			filexs.curfile = str(resolve(ins_args[0]))
 			if filexs.curfile and filexs.curfile != '0':
 				try:
-					filexs.file = open(filexs.curfile, 'r+')
+					if not os.path.exists(filexs.curfile):
+						filexs.file = open(filexs.curfile, 'w+')
+					else:
+						filexs.file = open(filexs.curfile, 'r+')
 				except:
 					print "suzy: could not open file"
 					if options.debug:
