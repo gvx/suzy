@@ -16,7 +16,7 @@ Use
     $ python suzy.py -h
 
 to see the command line options supported.
-Invoke the interpreter with:
+Invoke the compiler with:
 
     $ python sc.py infile.suz outfile.sc
 
