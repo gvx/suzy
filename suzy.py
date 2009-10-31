@@ -209,117 +209,121 @@ def matheval(expr):
 	if do_sqrt: tempres = int(tempres**.5)
 	return ('c', tempres)
 
-#Main Interpreter Loop
-i = 0
-lines = script.split('\n')
-ins_args_left = 0
-ins_args = []
-comp = None
-action = None
 mem = {}
-while i < len(lines):
-	ins = instruction_table[lines[i]]
-	if options.debug:
-		print 'INSTRUCTION:',ins
-		print 'MEMORY:',mem
-	if ins == 'STR_CONST':
-		i += 1
-		ins_args.append(('c', unesc(lines[i])))
-		if options.debug:
-			print 'META-INSTRUCTION:',lines[i]
-		ins_args_left -= 1
-	elif ins == 'NUM_CONST':
-		i += 1
-		ins_args.append(('c', int(lines[i])))
-		if options.debug:
-			print 'META-INSTRUCTION:',lines[i]
-		ins_args_left -= 1
-	elif ins == 'MATH_EXPR':
-		#evaluate math
-		i += 1
-		returnvalue = matheval(lines[i])
-		if options.debug:
-			print 'META-INSTRUCTION:',lines[i]
-		ins_args.append(returnvalue)
-		ins_args_left -= 1
-	elif ins == 'VAR':
-		i += 1
-		ins_args.append(('v', lines[i]))
-		if options.debug:
-			print 'META-INSTRUCTION:',lines[i]
-		ins_args_left -= 1
-	elif ins == 'IND_VAR':
-		ins_args.append('iv')
-	elif ins in ('COMP_EQ', 'COMP_GT', 'COMP_LT', 'SET', 'SWAP', 'CAT'):
-		action = ins
-		ins_args_left = 2
-	elif ins == 'COND_JUMP':
-		i = int(lines[i + (comp and 1 or 2)])-1
-	elif ins == 'RAND_DIR':
-		i = int(lines[i + random.randint(1,4)])-1
-	elif ins == 'GOTO':
-		i = int(lines[i + 1])-1
-	elif ins in ('INPUT', 'PRINT', 'OPEN_FILE'):
-		action = ins
-		ins_args_left = 1
-	elif ins == 'SUBSTR':
-		action = ins
-		ins_args_left = 4
-	elif ins == 'END_PROGRAM':
-		print '' #flush line
-		break
-	if action and not ins_args_left:
-		ins_args_i = len(ins_args) - 1
-		while ins_args_i >= 0:
-			if ins_args[ins_args_i] == 'iv':
-				ins_args[ins_args_i] = ('v', resolve(ins_args.pop(ins_args_i+1)))
-			ins_args_i -= 1
-		if action=='COMP_EQ':
-			comp = resolve(ins_args[0]) == resolve(ins_args[1])
-		elif action=='COMP_GT':
-			comp = resolve(ins_args[0]) > resolve(ins_args[1])
-		elif action=='COMP_LT':
-			comp = resolve(ins_args[0]) < resolve(ins_args[1])
-		elif action=='INPUT':
-			mem[resolvevar(ins_args[0])] = filexs.read()
-		elif action=='PRINT':
-			filexs.write(str(resolve(ins_args[0])))
-		elif action=='OPEN_FILE':
-			filexs.close()
-			filexs.curfile = str(resolve(ins_args[0]))
-			if filexs.curfile and filexs.curfile != '0':
-				try:
-					if not os.path.exists(filexs.curfile):
-						filexs.file = open(filexs.curfile, 'w+')
-					else:
-						filexs.file = open(filexs.curfile, 'r+')
-				except:
-					print "suzy: could not open file"
-					if options.debug:
-						print "Tried to open file", filexs.curfile, "but it failed"
-					break
-			else:
-				filexs.file = None
-		elif action=='SET':
-			put(resolvevar(ins_args[0]), resolve(ins_args[1]))
-		elif action=='SWAP':
-			tmp = resolve(ins_args[0])
-			put(resolvevar(ins_args[0]), resolve(ins_args[1]))
-			put(resolvevar(ins_args[1]), tmp)
-		elif action=='CAT':
-			if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
-				raise TypeError("Can't concatenate to anything other than a string variable")
-			if isinstance(resolve(ins_args[1]), int):
-				r = unichr(r)
-			else:
-				r = resolve(ins_args[1])
-			mem[resolvevar(ins_args[0])] += r
-		elif action=='SUBSTR':
-			if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
-				raise TypeError("Can't put a substring in anything other than a string variable")
-			put(resolvevar(ins_args[0]), resolve(ins_args[1])[resolve(ins_args[2]):resolve(ins_args[3])])
-		action = None
-		del ins_args[:]
-	i += 1
 
+#Main Interpreter Loop
+def interpret(script):
+	i = 0
+	lines = script.split('\n')
+	ins_args_left = 0
+	ins_args = []
+	comp = None
+	action = None
+
+	while i < len(lines):
+		ins = instruction_table[lines[i]]
+		if options.debug:
+			print 'INSTRUCTION:',ins
+			print 'MEMORY:',mem
+		if ins == 'STR_CONST':
+			i += 1
+			ins_args.append(('c', unesc(lines[i])))
+			if options.debug:
+				print 'META-INSTRUCTION:',lines[i]
+			ins_args_left -= 1
+		elif ins == 'NUM_CONST':
+			i += 1
+			ins_args.append(('c', int(lines[i])))
+			if options.debug:
+				print 'META-INSTRUCTION:',lines[i]
+			ins_args_left -= 1
+		elif ins == 'MATH_EXPR':
+			#evaluate math
+			i += 1
+			returnvalue = matheval(lines[i])
+			if options.debug:
+				print 'META-INSTRUCTION:',lines[i]
+			ins_args.append(returnvalue)
+			ins_args_left -= 1
+		elif ins == 'VAR':
+			i += 1
+			ins_args.append(('v', lines[i]))
+			if options.debug:
+				print 'META-INSTRUCTION:',lines[i]
+			ins_args_left -= 1
+		elif ins == 'IND_VAR':
+			ins_args.append('iv')
+		elif ins in ('COMP_EQ', 'COMP_GT', 'COMP_LT', 'SET', 'SWAP', 'CAT'):
+			action = ins
+			ins_args_left = 2
+		elif ins == 'COND_JUMP':
+			i = int(lines[i + (comp and 1 or 2)])-1
+		elif ins == 'RAND_DIR':
+			i = int(lines[i + random.randint(1,4)])-1
+		elif ins == 'GOTO':
+			i = int(lines[i + 1])-1
+		elif ins in ('INPUT', 'PRINT', 'OPEN_FILE'):
+			action = ins
+			ins_args_left = 1
+		elif ins == 'SUBSTR':
+			action = ins
+			ins_args_left = 4
+		elif ins == 'END_PROGRAM':
+			print '' #flush line
+			break
+		if action and not ins_args_left:
+			ins_args_i = len(ins_args) - 1
+			while ins_args_i >= 0:
+				if ins_args[ins_args_i] == 'iv':
+					ins_args[ins_args_i] = ('v', resolve(ins_args.pop(ins_args_i+1)))
+				ins_args_i -= 1
+			if action=='COMP_EQ':
+				comp = resolve(ins_args[0]) == resolve(ins_args[1])
+			elif action=='COMP_GT':
+				comp = resolve(ins_args[0]) > resolve(ins_args[1])
+			elif action=='COMP_LT':
+				comp = resolve(ins_args[0]) < resolve(ins_args[1])
+			elif action=='INPUT':
+				mem[resolvevar(ins_args[0])] = filexs.read()
+			elif action=='PRINT':
+				filexs.write(str(resolve(ins_args[0])))
+			elif action=='OPEN_FILE':
+				filexs.close()
+				filexs.curfile = str(resolve(ins_args[0]))
+				if filexs.curfile and filexs.curfile != '0':
+					try:
+						if not os.path.exists(filexs.curfile):
+							filexs.file = open(filexs.curfile, 'w+')
+						else:
+							filexs.file = open(filexs.curfile, 'r+')
+					except:
+						print "suzy: could not open file"
+						if options.debug:
+							print "Tried to open file", filexs.curfile, "but it failed"
+						break
+				else:
+					filexs.file = None
+			elif action=='SET':
+				put(resolvevar(ins_args[0]), resolve(ins_args[1]))
+			elif action=='SWAP':
+				tmp = resolve(ins_args[0])
+				put(resolvevar(ins_args[0]), resolve(ins_args[1]))
+				put(resolvevar(ins_args[1]), tmp)
+			elif action=='CAT':
+				if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
+					raise TypeError("Can't concatenate to anything other than a string variable")
+				if isinstance(resolve(ins_args[1]), int):
+					r = unichr(r)
+				else:
+					r = resolve(ins_args[1])
+				mem[resolvevar(ins_args[0])] += r
+			elif action=='SUBSTR':
+				if ins_args[0][0] == 'c' or not isinstance(resolve(ins_args[0]), str):
+					raise TypeError("Can't put a substring in anything other than a string variable")
+				put(resolvevar(ins_args[0]), resolve(ins_args[1])[resolve(ins_args[2]):resolve(ins_args[3])])
+			action = None
+			del ins_args[:]
+		i += 1
+
+interpret(script)
 filexs.close()
