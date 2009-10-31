@@ -26,6 +26,8 @@ Input/output:
 	! output
 File access:
 	/ open a file for input and output
+Libraries:
+	+ load a library
 Variable handling:
 	: set a variable to a value
 	( enter math mode
@@ -42,6 +44,7 @@ Math mode:
 	- subtraction
 	* multiplication
 	/ division
+	% modulus division
 Numeric:
 	0-9 numeric constants
 Variable names:
@@ -104,7 +107,7 @@ Usage:
 	( Starts math mode.
 	  Between ( and ), only integer variables, integer constants, +, -, * and / may be used.
 	  (Except for space and the vertical and lateral bar.)
-	  * and / have higer precedence than + and -, for the rest everything is evaluated left to right.
+	  *, / and % have higer precedence than + and -, for the rest everything is evaluated left to right.
 	  Example:
 		:b(a+2*42/4-8)
 	  This causes b to be a+(2*42/4)-8 = a+21-8 = a+13. If a is 2, b will be 15.
@@ -221,6 +224,11 @@ Usage:
 		:a (10) 000
 		:a 10 (000)
 	    All three set a to 10, and ignore the 0.
+
+	+ Library loading
+		+"foolib"
+	  Tries to load a file called "foolib.sc", and execute it, within the same memory as the calling script.
+	  Quitting (see @) in a script that is loaded as a library returns execution to the calling script.
 
 Escape sequenses:
 	\\     backslash
