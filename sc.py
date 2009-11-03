@@ -173,10 +173,6 @@ def process_branch(pos):
 				state, args_left = flushadd('OPEN_FILE', state, args_left)
 				state='args'
 				args_left = 1
-			elif c == '+':
-				state, args_left = flushadd('USE_LIB', state, args_left)
-				state='args'
-				args_left = 1
 			elif c == '=':
 				state, args_left = flushadd('COMP_EQ', state, args_left)
 				state='args'
@@ -228,6 +224,10 @@ def process_branch(pos):
 				state, args_left = flushadd('MATH_EXPR', state, args_left)
 				state='math'
 				math_depth = 0
+			elif c == '+':
+				state, args_left = flushadd('USE_LIB', state, args_left)
+				state='args'
+				args_left = 1
 			elif c in string.letters:
 				state, args_left = flushadd('VAR', state, args_left)
 				byte_code[pos].append(c)

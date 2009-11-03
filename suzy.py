@@ -216,11 +216,14 @@ def matheval(expr):
 	return ('c', tempres)
 
 mem = {}
+loadedlibs = {}
+
+if options.debug:
+	mem["debug_lib_level"] = 0
 
 #Main Interpreter Loop
-def interpret(script):
+def interpret(lines, ismain=False):
 	i = 0
-	lines = script.split('\n')
 	ins_args_left = 0
 	ins_args = []
 	comp = None
@@ -229,33 +232,34 @@ def interpret(script):
 	while i < len(lines):
 		ins = instruction_table[lines[i]]
 		if options.debug:
-			print 'INSTRUCTION:',ins
-			print 'MEMORY:',mem
+			sp = '->'*mem["debug_lib_level"]
+			print sp+'INSTRUCTION:',ins
+			print sp+'MEMORY:',mem
 		if ins == 'STR_CONST':
 			i += 1
 			ins_args.append(('c', unesc(lines[i])))
 			if options.debug:
-				print 'META-INSTRUCTION:',lines[i]
+				print sp+'META-INSTRUCTION:',lines[i]
 			ins_args_left -= 1
 		elif ins == 'NUM_CONST':
 			i += 1
 			ins_args.append(('c', int(lines[i])))
 			if options.debug:
-				print 'META-INSTRUCTION:',lines[i]
+				print sp+'META-INSTRUCTION:',lines[i]
 			ins_args_left -= 1
 		elif ins == 'MATH_EXPR':
 			#evaluate math
 			i += 1
 			returnvalue = matheval(lines[i])
 			if options.debug:
-				print 'META-INSTRUCTION:',lines[i]
+				print sp+'META-INSTRUCTION:',lines[i]
 			ins_args.append(returnvalue)
 			ins_args_left -= 1
 		elif ins == 'VAR':
 			i += 1
 			ins_args.append(('v', lines[i]))
 			if options.debug:
-				print 'META-INSTRUCTION:',lines[i]
+				print sp+'META-INSTRUCTION:',lines[i]
 			ins_args_left -= 1
 		elif ins == 'IND_VAR':
 			ins_args.append('iv')
@@ -268,14 +272,15 @@ def interpret(script):
 			i = int(lines[i + random.randint(1,4)])-1
 		elif ins == 'GOTO':
 			i = int(lines[i + 1])-1
-		elif ins in ('INPUT', 'PRINT', 'OPEN_FILE'):
+		elif ins in ('INPUT', 'PRINT', 'OPEN_FILE', 'USE_LIB'):
 			action = ins
 			ins_args_left = 1
 		elif ins == 'SUBSTR':
 			action = ins
 			ins_args_left = 4
 		elif ins == 'END_PROGRAM':
-			print '' #flush line
+			if ismain:
+				print '' #flush line
 			break
 		if action and not ins_args_left:
 			ins_args_i = len(ins_args) - 1
@@ -309,6 +314,25 @@ def interpret(script):
 						break
 				else:
 					filexs.file = None
+			elif action=='USE_LIB':
+				try:
+					fname = str(resolve(ins_args[0]))
+					if fname in loadedlibs:
+						libscript = loadedlibs[fname]
+					else:
+						libfile = open(fname+'.sc')
+						libfile.readline()
+						libscript = libfile.read().split('\n')
+						libfile.close()
+						loadedlibs[fname] = libscript
+					if options.debug:
+						mem["debug_lib_level"] += 1
+					interpret(libscript)
+					if options.debug:
+						mem["debug_lib_level"] -= 1
+				except IOError:
+					print "suzy: could not load library", fname
+					break
 			elif action=='SET':
 				put(resolvevar(ins_args[0]), resolve(ins_args[1]))
 			elif action=='SWAP':
@@ -331,5 +355,8 @@ def interpret(script):
 			del ins_args[:]
 		i += 1
 
-interpret(script)
+try:
+	interpret(script.split('\n'), True)
+except Exception, e:
+	print "suzy: fatal unhandled error:", e
 filexs.close()
