@@ -121,8 +121,6 @@ def unesc(escaped_text):
 	return ''.join(unescaped_text)
 
 def matheval(expr):
-	tempres = 0
-	do_sqrt = False
 	fields = []
 	tmpx = ''
 	indirect = False
@@ -147,10 +145,21 @@ def matheval(expr):
 		elif char == '\\':
 			indirect = True
 			tmpx += char
+		elif char in '()':
+			if tmpx:
+				fields.append((indirect and 'iv' or 'c',tmpx))
+				tmpx = ''
+			indirect = False
+			fields.append(('p',char))
 		else:
 			tmpx += char
 	if tmpx:
 		fields.append((indirect and 'iv' or 'c',tmpx))
+	return evalmathchunk(fields)
+
+def evalmathchunk(fields):
+	tempres = 0
+	do_sqrt = False
 	if fields[0][1] == '-':
 		fields.pop(0)
 		fields[0] = ('c',-int(resolve(fields[0])))
