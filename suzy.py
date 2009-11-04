@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#suzy interpreter
+#Suzy interpreter
 
 import sys, optparse, os.path, math
 from random import randint
@@ -138,7 +138,7 @@ def matheval(expr):
 				fields.append((indirect and 'iv' or 'c',tmpx))
 				tmpx = ''
 			elif fields and fields[-1][0] == 'v':
-				#implicit multiplication
+				#Implicit multiplication.
 				fields.append(('o','*'))
 			indirect = False
 			fields.append(('v', char))
@@ -182,7 +182,7 @@ def evalmathchunk(fields):
 		fields[-1] = ('c',int(resolve(fields[0]))**2)
 	elif fields[0][1] == '/':
 		fields.pop()
-	#evaluate fields *here*
+	#Evaluate fields.
 	i = 1
 	while i < len(fields):
 		if fields[i][1] == '~':
@@ -194,7 +194,6 @@ def evalmathchunk(fields):
 			i += 2
 	i = 1
 	while i < len(fields):
-		#if fields[i][0] == 'o':
 		if fields[i][1] in '*/%':
 			two = fields.pop(i+1)
 			op = fields.pop(i)
@@ -232,7 +231,7 @@ def evalmathchunk(fields):
 					fields.insert(i-1, ('c', int(resolve(one))-int(resolve(two))))
 			else:
 				i += 2
-	tempres = resolve(fields[0])#should be one
+	tempres = resolve(fields[0]) #There should be just one left.
 	if do_sqrt: tempres = int(tempres**.5)
 	return ('c', tempres)
 
@@ -271,7 +270,7 @@ def interpret(lines, ismain=False):
 				print sp+'META-INSTRUCTION:',lines[i]
 			ins_args_left -= 1
 		elif ins == 'MATH_EXPR':
-			#evaluate math
+			#Evaluate math.
 			i += 1
 			returnvalue = matheval(lines[i])
 			if options.debug:
@@ -303,7 +302,7 @@ def interpret(lines, ismain=False):
 			ins_args_left = 4
 		elif ins == 'END_PROGRAM':
 			if ismain and not flushedline:
-				print '' #flush line
+				print '' #Flush line before exiting, but only if it was not already flushed.
 			break
 		if action and not ins_args_left:
 			ins_args_i = len(ins_args) - 1
