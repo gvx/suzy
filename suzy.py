@@ -155,6 +155,27 @@ def matheval(expr):
 			tmpx += char
 	if tmpx:
 		fields.append((indirect and 'iv' or 'c',tmpx))
+	isclosed = False
+	pos_close = 0
+	hasparens = True
+	while hasparens:
+		pos = len(fields)-1
+		hasparens = False
+		isclosed = False
+		while pos >= 0:
+			if fields[pos][0] == 'p':
+				hasparens = True
+				if fields[pos][1] == ')':
+					pos_close = pos
+					isclosed = True
+				elif fields[pos][1] == '(':
+					if isclosed:
+						isclosed = False
+						#We have a chunk to evaluate!
+						temp = fields[pos+1:pos_close]
+						del fields[pos+1:pos_close+1]
+						fields[pos] = evalmathchunk(temp)
+			pos -= 1
 	return evalmathchunk(fields)
 
 def evalmathchunk(fields):
@@ -232,7 +253,7 @@ def evalmathchunk(fields):
 			else:
 				i += 2
 	tempres = resolve(fields[0]) #There should be just one left.
-	if do_sqrt: tempres = int(tempres**.5)
+	if do_sqrt: tempres = int(int(tempres)**.5)
 	return ('c', tempres)
 
 mem = {}
