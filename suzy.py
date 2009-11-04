@@ -2,6 +2,7 @@
 #suzy interpreter
 
 import sys, optparse, os.path, math
+from random import randint
 from subprocess import Popen
 from sdef import instruction_table
 
@@ -126,7 +127,7 @@ def matheval(expr):
 	if options.debug:
 		print(expr)
 	for char in expr:
-		if char in '*/%+-':
+		if char in '~*/%+-':
 			if tmpx:
 				fields.append((indirect and 'iv' or 'c',tmpx))
 				tmpx = ''
@@ -171,6 +172,15 @@ def matheval(expr):
 	elif fields[0][1] == '/':
 		fields.pop()
 	#evaluate fields *here*
+	i = 1
+	while i < len(fields):
+		if fields[i][1] == '~':
+			two = fields.pop(i+1)
+			op = fields.pop(i)
+			one = fields.pop(i-1)
+			fields.insert(i-1, ('c', randint(int(resolve(one)),int(resolve(two)))))
+		else:
+			i += 2
 	i = 1
 	while i < len(fields):
 		#if fields[i][0] == 'o':
@@ -269,7 +279,7 @@ def interpret(lines, ismain=False):
 		elif ins == 'COND_JUMP':
 			i = int(lines[i + (comp and 1 or 2)])-1
 		elif ins == 'RAND_DIR':
-			i = int(lines[i + random.randint(1,4)])-1
+			i = int(lines[i + randint(1,4)])-1
 		elif ins == 'GOTO':
 			i = int(lines[i + 1])-1
 		elif ins in ('INPUT', 'PRINT', 'OPEN_FILE', 'USE_LIB'):

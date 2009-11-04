@@ -197,10 +197,6 @@ def process_branch(pos):
 				state, args_left = flushadd('SUBSTR', state, args_left)
 				state='args'
 				args_left = 3
-			elif c == '~':
-				state, args_left = flushadd('SWAP', state, args_left)
-				state='args'
-				args_left = 2
 			elif c == ':':
 				state, args_left = flushadd('SET', state, args_left)
 				state='args'
@@ -228,6 +224,10 @@ def process_branch(pos):
 				state, args_left = flushadd('USE_LIB', state, args_left)
 				state='args'
 				args_left = 1
+			elif c == '~':
+				state, args_left = flushadd('SWAP', state, args_left)
+				state='args'
+				args_left = 2
 			elif c in string.letters:
 				state, args_left = flushadd('VAR', state, args_left)
 				byte_code[pos].append(c)
