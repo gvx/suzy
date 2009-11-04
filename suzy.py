@@ -83,6 +83,8 @@ class Filexs:
 		else:
 			return sys.stdin.readline().rstrip()
 	def write(self, t):
+		global flushedline
+		flushedline = not t or t.endswith('\n')
 		if self.file:
 			self.file.write(t)
 		else:
@@ -227,6 +229,8 @@ def matheval(expr):
 
 mem = {}
 loadedlibs = {}
+flushedline = True #This signifies whether or not a \n needs to be printed to
+                   #stdout before exiting.
 
 if options.debug:
 	mem["debug_lib_level"] = 0
@@ -289,7 +293,7 @@ def interpret(lines, ismain=False):
 			action = ins
 			ins_args_left = 4
 		elif ins == 'END_PROGRAM':
-			if ismain:
+			if ismain and not flushedline:
 				print '' #flush line
 			break
 		if action and not ins_args_left:
