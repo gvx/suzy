@@ -401,5 +401,8 @@ def interpret(lines, ismain=False):
 try:
 	interpret(script.split('\n'), True)
 except Exception, e:
-	print "suzy: fatal unhandled error:", e
+	if options.debug:
+		raise
+	else:
+		print "suzy: fatal unhandled error:", e
 filexs.close()
